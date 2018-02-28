@@ -1,0 +1,29 @@
+{
+  "name": "homebridge-NeoPixels.MultiLightPlatform",
+  "version": "0.0.2",
+  "description": "Homebridge platform plugin to create multiple lights on a single NeoPixel string of LED's",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Coen Bresser",
+  "pluginName": "NeoPixels",
+  "platformName": "MultiLightPlatform",
+  "license": "ISC",
+  "dependencies": {
+    "color-convert": "^1.9.1",
+    "rpi-ws281x-native": "^0.8.2"
+  },
+  "repository": {
+      "type": "git",
+      "url": "git://github.com/coenbresser/homebridge-neo-pixel-platform.git"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "engines": {
+    "homebridge": "^0.4.38",
+    "node": "^6.0.0"
+  }
+}
