@@ -15,8 +15,8 @@
     "rpi-ws281x-native": "^0.8.2"
   },
   "repository": {
-      "type": "git",
-      "url": "git://github.com/coenbresser/homebridge-neo-pixel-platform.git"
+    "type": "git",
+    "url": "git://github.com/coenbresser/homebridge-neo-pixel-platform.git"
   },
   "devDependencies": {},
   "keywords": [
