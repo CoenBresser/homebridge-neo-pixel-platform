@@ -91,6 +91,7 @@ function MultiLightPlatform(log, config, api) {
     }
   }.bind(this));
 
+  // TODO: Check port range, go to default if null or out of range
   this.requestServer.listen(config.servicePort, function() {
     platform.log("Server Listening...");
   });
@@ -207,7 +208,7 @@ MultiLightPlatform.prototype.writeAccessoryStates = function() {
       }
     }
   }
-  platform.log("Full array: ", platform.pixelData);
+  platform.ws281x.render(platform.pixelData);
 }
 
 // Sample function to show how developer can add accessory dynamically from outside event
