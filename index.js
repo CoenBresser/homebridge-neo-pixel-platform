@@ -35,7 +35,7 @@ function MultiLightPlatform(log, config, api) {
   platform.ws281x = require('rpi-ws281x-native');
   platform.pixelData = new Uint32Array(config.nrOfLeds);
   platform.ws281x.init(config.nrOfLeds);
-  platform.ws281x.reset();
+  platform.ws281x.render(platform.pixelData);
 
     // http.createServer((request, response) => {
     //   const { headers, method, url } = request;
