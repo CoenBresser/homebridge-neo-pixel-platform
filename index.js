@@ -189,10 +189,7 @@ MultiLightPlatform.prototype.writeAccessoryStates = function() {
 
     if (accState.swi) {
       var rgb = convert.hsv.rgb(accState.hue, accState.sat, accState.bri);
-      platform.log("Converted hsv: ", accState.hue, ", ", accState.sat,  ", ", accState.bri);
-      platform.log("To rgb: ", rgb);
       rgbUINT32 = (rgb[0] * 256 + rgb[1]) * 256 + rgb[2];
-      //platform.log("RGB: ", rgb);
 
       // Combine the data
       for (i = acc.context.startIdx; i < acc.context.endIdx; i++) {
@@ -210,7 +207,6 @@ MultiLightPlatform.prototype.writeAccessoryStates = function() {
       }
     }
   }
-  platform.log("Full buffer: ", platform.pixelData)
   platform.ws281x.render(platform.pixelData);
 }
 
