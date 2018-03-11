@@ -30,33 +30,12 @@ function MultiLightPlatform(log, config, api) {
   this.accessories = {};
   this.accessoryStates = {};
 
-  //platform.log(config);
-
   platform.ws281x = require('rpi-ws281x-native');
   platform.pixelData = new Uint32Array(config.nrOfLeds);
   platform.ws281x.init(config.nrOfLeds);
   platform.ws281x.render(platform.pixelData);
 
-    // http.createServer((request, response) => {
-    //   const { headers, method, url } = request;
-    //   platform.log(headers);
-    //   platform.log(method);
-    //   platform.log(url);
-    //
-    //   let body = [];
-    //   request.on('error', (err) => {
-    //     console.error(err);
-    //   }).on('data', (chunk) => {
-    //     body.push(chunk);
-    //   }).on('end', () => {
-    //     body = Buffer.concat(body).toString();
-    //     // At this point, we have the headers, method, url and body, and can now
-    //     // do whatever we need to in order to respond to this request.
-    //     platform.log(body);
-    //   });
-    // }).listen(28082); // Activates this server, listening on port 8080.
-
-  //TODO: improve this server massively in another module/file
+  //TODO: change to be able to win a beauty contest.
   this.requestServer = http.createServer(function(request, response) {
     const { headers, method, url } = request;
     if (url === "/add" && method === "POST") {
@@ -97,18 +76,15 @@ function MultiLightPlatform(log, config, api) {
   });
 
   if (api) {
-      // Save the API object as plugin needs to register new accessory via this object
-      this.api = api;
+    // Save the API object as plugin needs to register new accessory via this object
+    this.api = api;
 
-      // Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories.
-      // Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
-      // Or start discover new accessories.
-      this.api.on('didFinishLaunching', function() {
-        platform.log("DidFinishLaunching");
-        // setInterval(function() {
-        //   platform.log("Update");
-        // }, 5000);
-      }.bind(this));
+    // Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories.
+    // Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
+    // Or start discover new accessories.
+    this.api.on('didFinishLaunching', function() {
+      platform.log("DidFinishLaunching");
+    }.bind(this));
   }
 }
 
@@ -118,10 +94,6 @@ function MultiLightPlatform(log, config, api) {
 MultiLightPlatform.prototype.configureAccessory = function(accessory) {
   this.log(accessory.displayName, "Configure Accessory");
   var platform = this;
-
-  // Set the accessory to reachable if plugin can currently process the accessory,
-  // otherwise set to false and update the reachability later by invoking
-  // accessory.updateReachability()
   accessory.reachable = true;
 
   accessory.on('identify', function(paired, callback) {
@@ -129,6 +101,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     callback();
   });
 
+  // Config the accessary and create a state object
   if (accessory.getService(Service.Lightbulb)) {
     this.accessoryStates[accessory.displayName] = {
       "swi": false,
@@ -141,7 +114,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.On)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].swi = value;
-      platform.writeAccessoryStates()
+      platform.writeAccessoryStates();
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].swi);
@@ -150,7 +123,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.Brightness)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].bri = value;
-      platform.writeAccessoryStates()
+      platform.writeAccessoryStates();
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].bri);
@@ -159,7 +132,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.Hue)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].hue = value;
-      platform.writeAccessoryStates()
+      platform.writeAccessoryStates();
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].hue);
@@ -168,7 +141,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.Saturation)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].sat = value;
-      platform.writeAccessoryStates()
+      platform.writeAccessoryStates();
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].sat);
@@ -197,7 +170,7 @@ MultiLightPlatform.prototype.writeAccessoryStates = function() {
         currentB = pd % 256;
         pd = pd / 256;
         currentG = pd % 256;
-        currentR = pd / 256 % 256; // just to be sure when 1's are shifted in.
+        currentR = pd / 256 % 256; // just to be sure when random data is shifted in.
 
         newR = Math.min(255, currentR + rgb[0]);
         newG = Math.min(255, currentG + rgb[1]);
@@ -210,7 +183,6 @@ MultiLightPlatform.prototype.writeAccessoryStates = function() {
   platform.ws281x.render(platform.pixelData);
 }
 
-// Sample function to show how developer can add accessory dynamically from outside event
 MultiLightPlatform.prototype.addAccessory = function(accessoryName, startIdx, endIdx) {
   this.log("Add Accessory");
   var platform = this;
@@ -231,95 +203,16 @@ MultiLightPlatform.prototype.updateAccessoriesReachability = function() {
   this.log("Update Reachability");
   for (const accName in this.accessories) {
     var accessory = this.accessories[accName];
-    accessory.updateReachability(false);
+    // Always accessible as they're on this HW platform
+    accessory.updateReachability(true);
   }
 }
 
-// Sample function to show how developer can remove accessory dynamically from outside event
 MultiLightPlatform.prototype.removeAccessory = function(accName) {
   this.log("Remove Accessory", accName);
   if (this.accessories[accName]) {
     this.api.unregisterPlatformAccessories(packageJson.pluginName, packageJson.platformName, [this.accessories[accName]]);
     delete this.accessories[accName];
+    delete this.accessoryStates[accName];
   }
-}
-
-// Handler will be invoked when user try to config your plugin.
-// Callback can be cached and invoke when necessary.
-MultiLightPlatform.prototype.configurationRequestHandler = function(context, request, callback) {
-  this.log("Context: ", JSON.stringify(context));
-  this.log("Request: ", JSON.stringify(request));
-
-  // Check the request response
-  if (request && request.response && request.response.inputs && request.response.inputs.name) {
-    this.addAccessory(request.response.inputs.name);
-
-    // Invoke callback with config will let homebridge save the new config into config.json
-    // Callback = function(response, type, replace, config)
-    // set "type" to platform if the plugin is trying to modify platforms section
-    // set "replace" to true will let homebridge replace existing config in config.json
-    // "config" is the data platform trying to save
-    callback(null, "platform", true, {"platform":"MultiLightPlatform", "otherConfig":"SomeData"});
-    return;
-  }
-
-  // - UI Type: Input
-  // Can be used to request input from user
-  // User response can be retrieved from request.response.inputs next time
-  // when configurationRequestHandler being invoked
-
-  var respDict = {
-    "type": "Interface",
-    "interface": "input",
-    "title": "Add Accessory",
-    "items": [
-      {
-        "id": "name",
-        "title": "Name",
-        "placeholder": "Fancy Light"
-      }//,
-      // {
-      //   "id": "pw",
-      //   "title": "Password",
-      //   "secure": true
-      // }
-    ]
-  }
-
-  // - UI Type: List
-  // Can be used to ask user to select something from the list
-  // User response can be retrieved from request.response.selections next time
-  // when configurationRequestHandler being invoked
-
-  // var respDict = {
-  //   "type": "Interface",
-  //   "interface": "list",
-  //   "title": "Select Something",
-  //   "allowMultipleSelection": true,
-  //   "items": [
-  //     "A","B","C"
-  //   ]
-  // }
-
-  // - UI Type: Instruction
-  // Can be used to ask user to do something (other than text input)
-  // Hero image is base64 encoded image data. Not really sure the maximum length HomeKit allows.
-
-  // var respDict = {
-  //   "type": "Interface",
-  //   "interface": "instruction",
-  //   "title": "Almost There",
-  //   "detail": "Please press the button on the bridge to finish the setup.",
-  //   "heroImage": "base64 image data",
-  //   "showActivityIndicator": true,
-  // "showNextButton": true,
-  // "buttonText": "Login in browser",
-  // "actionURL": "https://google.com"
-  // }
-
-  // Plugin can set context to allow it track setup process
-  context.ts = "Hello";
-
-  // Invoke callback to update setup UI
-  callback(respDict);
 }
