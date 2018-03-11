@@ -20,10 +20,13 @@ Configuration is relatively straightforward. Below is a json platform snippet to
     "platform": "NeoPixels.MultiLightPlatform",
     "servicePort": 6615,
     "name": "NeoPixels",
-    "nrOfLeds": 14
+    "nrOfLeds": 14,
+    "showRainbowAnimationWhenStarted": true
 }]
 ```
 The servicePort parameter is there to select a free port on your system. The webservice won't win a beauty contest but it works.
+
+The showRainbowAnimationWhenStarted parameter hides or shows a rainbow animation after launching to indicate launch has finished.
 
 ## Add lights
 Following commands add three lights, one using all (14) LED's, one at the beginning and one at the end of the string:
