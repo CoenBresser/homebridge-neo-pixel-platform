@@ -1,4 +1,5 @@
 var http = require('http');
+var events = require('events');
 var convert = require('color-convert');
 var packageJson = require('./package.json');
 var Accessory, Service, Characteristic, UUIDGen;
@@ -23,12 +24,14 @@ module.exports = function(homebridge) {
 // config may be null
 // api may be null if launched from old homebridge version
 function MultiLightPlatform(log, config, api) {
-  log(packageJson.platformName + " Init");
+  log(packageJson.platformName + " Init. Version: " + packageJson.version);
   var platform = this;
   this.log = log;
   this.config = config;
   this.accessories = {};
   this.accessoryStates = {};
+  this.eventEmitter = new events.EventEmitter();
+  this.eventEmitter.addListener('change', platform.writeAccessoryStates);
 
   platform.ws281x = require('rpi-ws281x-native');
   platform.pixelData = new Uint32Array(config.nrOfLeds);
@@ -84,6 +87,34 @@ function MultiLightPlatform(log, config, api) {
     // Or start discover new accessories.
     this.api.on('didFinishLaunching', function() {
       platform.log("DidFinishLaunching");
+
+      function colorwheel(pos) {
+        pos = 255 - pos;
+        if (pos < 85) { return rgb2Int(255 - pos * 3, 0, pos * 3); }
+        else if (pos < 170) { pos -= 85; return rgb2Int(0, pos * 3, 255 - pos * 3); }
+        else { pos -= 170; return rgb2Int(pos * 3, 255 - pos * 3, 0); }
+      }
+
+      function rgb2Int(r, g, b) {
+        return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
+      }
+
+      var offset = 0;
+      var count = 0;
+      var intervalObj = setInterval(function () {
+        for (var i = 0; i < config.nrOfLeds; i++) {
+          platform.pixelData[i] = colorwheel((offset + i) % 256);
+        }
+
+        offset = (offset + 1) % 256;
+        platform.ws281x.render(platform.pixelData);
+        if (count >= 60) {
+          clearInterval(intervalObj);
+        } else {
+          count = count + 1;
+        }
+      }, 1000 / 30);
+
     }.bind(this));
   }
 }
@@ -114,7 +145,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.On)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].swi = value;
-      platform.writeAccessoryStates();
+      platform.eventEmitter.emit('change', platform);
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].swi);
@@ -123,7 +154,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.Brightness)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].bri = value;
-      platform.writeAccessoryStates();
+      platform.eventEmitter.emit('change', platform);
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].bri);
@@ -132,7 +163,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.Hue)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].hue = value;
-      platform.writeAccessoryStates();
+      platform.eventEmitter.emit('change', platform);
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].hue);
@@ -141,7 +172,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
     accessoryServices.getCharacteristic(Characteristic.Saturation)
     .on('set', function(value, callback) {
       platform.accessoryStates[accessory.displayName].sat = value;
-      platform.writeAccessoryStates();
+      platform.eventEmitter.emit('change', platform);
       callback();
     }).on('get', function(callback) {
       callback(null, platform.accessoryStates[accessory.displayName].sat);
@@ -151,8 +182,7 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
   this.accessories[accessory.displayName] = accessory;
 }
 
-MultiLightPlatform.prototype.writeAccessoryStates = function() {
-  platform = this;
+MultiLightPlatform.prototype.writeAccessoryStates = function(platform) {
 
   // Start fresh
   platform.pixelData.fill(0);
