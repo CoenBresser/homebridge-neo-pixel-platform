@@ -112,7 +112,7 @@ function MultiLightPlatform(log, config, api) {
             count = count + 1;
           }
 
-          for (var i = config.nrOfLeds - 1; i > 1; i--) {
+          for (var i = config.nrOfLeds - 1; i >= 1; i--) {
             platform.pixelData[i] = platform.pixelData[i-1];
           }
           if (count <= 32) {
