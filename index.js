@@ -88,32 +88,42 @@ function MultiLightPlatform(log, config, api) {
     this.api.on('didFinishLaunching', function() {
       platform.log("DidFinishLaunching");
 
-      function colorwheel(pos) {
-        pos = 255 - pos;
-        if (pos < 85) { return rgb2Int(255 - pos * 3, 0, pos * 3); }
-        else if (pos < 170) { pos -= 85; return rgb2Int(0, pos * 3, 255 - pos * 3); }
-        else { pos -= 170; return rgb2Int(pos * 3, 255 - pos * 3, 0); }
-      }
-
-      function rgb2Int(r, g, b) {
-        return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
-      }
-
-      var offset = 0;
-      var count = 0;
-      var intervalObj = setInterval(function () {
-        for (var i = 0; i < config.nrOfLeds; i++) {
-          platform.pixelData[i] = colorwheel((offset + i) % 256);
+      if (config.showRainbowAnimationWhenStarted) {
+        function colorwheel(pos) {
+          pos = 255 - pos;
+          if (pos < 85) { return rgb2Int(255 - pos * 3, 0, pos * 3); }
+          else if (pos < 170) { pos -= 85; return rgb2Int(0, pos * 3, 255 - pos * 3); }
+          else { pos -= 170; return rgb2Int(pos * 3, 255 - pos * 3, 0); }
         }
 
-        offset = (offset + 1) % 256;
-        platform.ws281x.render(platform.pixelData);
-        if (count >= 60) {
-          clearInterval(intervalObj);
-        } else {
-          count = count + 1;
+        function rgb2Int(r, g, b) {
+          return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
         }
-      }, 1000 / 30);
+
+        var count = 0;
+        var colorStep = 256 / 32;
+        platform.pixelData.fill(0);
+        // Create an interval object to show a rainbow runner when started
+        var intervalObj = setInterval(function () {
+          // Shift in 32 rainbow colors, run over string, and shift out
+          if (count >= 2 * 32 + config.nrOfLeds) {
+            clearInterval(intervalObj);
+          } else {
+            count = count + 1;
+          }
+
+          for (var i = config.nrOfLeds - 1; i > 1; i--) {
+            platform.pixelData[i] = platform.pixelData[i-1];
+          }
+          if (count <= 32) {
+            platform.pixelData[0] = colorwheel(count * colorStep - 1);
+          } else {
+            platform.pixelData[0] = 0;
+          }
+
+          platform.ws281x.render(platform.pixelData);
+        }, 4000 / (2 * 32 + config.nrOfLeds));
+      }
 
     }.bind(this));
   }
