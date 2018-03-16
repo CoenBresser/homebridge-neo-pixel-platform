@@ -10,7 +10,7 @@ Standard install through npm when published on NPM... Note the sudo and the -g a
 ```console
 $ sudo npm install -g homebridge-neo-pixel-platform
 ```
-Homebridge itself should run with priviliged access. I use homebridge in systemd running with sudo rights.
+Homebridge itself should run with priviliged access. I use homebridge in systemd running as root which was the easiest way but not per se the best solution.
 
 # Configure
 Configuration is relatively straightforward. Below is a json platform snippet to add to your Homebridge configuration. Adding lights is done through a websevice.
