@@ -34,9 +34,11 @@ function MultiLightPlatform(log, config, api) {
   this.eventEmitter.addListener('change', platform.writeAccessoryStates);
 
   platform.ws281x = require('rpi-ws281x-native');
-  platform.pixelData = new Uint32Array(config.nrOfLeds);
   platform.ws281x.init(config.nrOfLeds);
-  platform.ws281x.render(platform.pixelData);
+
+  resetPixelData = new Uint32Array(config.nrOfLeds);
+  resetPixelData.fill(0);
+  platform.ws281x.render(resetPixelData);
 
   //TODO: change to be able to win a beauty contest.
   this.requestServer = http.createServer(function(request, response) {
@@ -102,7 +104,8 @@ function MultiLightPlatform(log, config, api) {
 
         var count = 0;
         var colorStep = 256 / 32;
-        platform.pixelData.fill(0);
+        pixelData = new Uint32Array(platform.config.nrOfLeds);
+        pixelData.fill(0);
         // Create an interval object to show a rainbow runner when started
         var intervalObj = setInterval(function () {
           // Shift in 32 rainbow colors, run over string, and shift out
@@ -113,15 +116,15 @@ function MultiLightPlatform(log, config, api) {
           }
 
           for (var i = config.nrOfLeds - 1; i >= 1; i--) {
-            platform.pixelData[i] = platform.pixelData[i-1];
+            pixelData[i] = pixelData[i-1];
           }
           if (count <= 32) {
-            platform.pixelData[0] = colorwheel(count * colorStep - 1);
+            pixelData[0] = colorwheel(count * colorStep - 1);
           } else {
-            platform.pixelData[0] = 0;
+            pixelData[0] = 0;
           }
 
-          platform.ws281x.render(platform.pixelData);
+          platform.ws281x.render(pixelData);
         }, 4000 / (2 * 32 + config.nrOfLeds));
       }
 
@@ -195,7 +198,8 @@ MultiLightPlatform.prototype.configureAccessory = function(accessory) {
 MultiLightPlatform.prototype.writeAccessoryStates = function(platform) {
 
   // Start fresh
-  platform.pixelData.fill(0);
+  pixelData = new Uint32Array(platform.config.nrOfLeds);
+  pixelData.fill(0);
   for (const accName in platform.accessoryStates) {
     accState = platform.accessoryStates[accName];
     acc = platform.accessories[accName];
@@ -206,7 +210,7 @@ MultiLightPlatform.prototype.writeAccessoryStates = function(platform) {
 
       // Combine the data
       for (i = acc.context.startIdx; i < acc.context.endIdx; i++) {
-        var pd = platform.pixelData[i];
+        var pd = pixelData[i];
         currentB = pd % 256;
         pd = pd / 256;
         currentG = pd % 256;
@@ -216,11 +220,11 @@ MultiLightPlatform.prototype.writeAccessoryStates = function(platform) {
         newG = Math.min(255, currentG + rgb[1]);
         newB = Math.min(255, currentB + rgb[2]);
 
-        platform.pixelData[i] = (newR * 256 + newG) * 256 + newB;
+        pixelData[i] = (newR * 256 + newG) * 256 + newB;
       }
     }
   }
-  platform.ws281x.render(platform.pixelData);
+  platform.ws281x.render(pixelData);
 }
 
 MultiLightPlatform.prototype.addAccessory = function(accessoryName, startIdx, endIdx) {
