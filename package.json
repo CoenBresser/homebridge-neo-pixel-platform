@@ -10,7 +10,7 @@
   "pluginName": "NeoPixels",
   "platformName": "MultiLightPlatform",
   "license": "ISC",
-  "dependencies": {
+  "dependencies": { 
     "color-convert": "^1.9.1",
     "events": "^2.0.0",
     "http": "0.0.0",
